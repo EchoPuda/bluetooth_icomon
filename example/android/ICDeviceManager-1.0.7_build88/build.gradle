@@ -1,0 +1,2 @@
+configurations.maybeCreate("default")
+artifacts.add("default", file('ICDeviceManager-1.0.7_build88.aar'))
