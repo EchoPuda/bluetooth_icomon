@@ -19,25 +19,49 @@ class _MyAppState extends State<MyApp> {
   List<Widget> listScan = new List();
 
   List<Widget> list = new List();
+  String code;
 
   @override
   void initState() {
     super.initState();
     initPlatformState();
+    onScanMsg();
+    bluetooth.responseFromBleState.listen((data){
+      print(data);
+    });
+    //实时获取扫描数据
     bluetooth.responseFromScan.listen((data) {
-      print(data.macAddr);
-      listScan.add(new Item(name: data.name,deviceState: data.macAddr,));
+      print(data.type);
+      //刷新列表
       setState(() {
+        code = data.macAddr;
+        print(code);
       });
     });
-  }
 
+  }
+  ///开始扫描
+  void onScanMsg() async {
+    await bluetooth.getScanMsg();
+  }
+  ///获取设备数据
+  Future<void> getDeviceMsg() async {
+
+     String result = await bluetooth.getDeviceMsg(macAddr: code);
+   print(result);
+    print(code+'已连接');
+
+     bluetooth.responseFromFatScaleMsg.listen((data){
+       print(data.weight_kg);
+     });
+  }
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       platformVersion = await bluetooth.bluetoothMacAddr;
+      await bluetooth.getScanMsg();
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -66,6 +90,9 @@ class _MyAppState extends State<MyApp> {
     return SizedBox();
   }
 
+  void stopScan(){
+    bluetooth.stopScanMsg();
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -77,8 +104,18 @@ class _MyAppState extends State<MyApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text('Running on: $_platformVersion\n'),
-              Text("response: $_response"),
+              InkWell(
+                onTap: stopScan,
+                child: Text("response: $_response",style: TextStyle(fontSize: 30.0),),
+              ),
+              InkWell(
+                onTap: onScanMsg,
+                child: Text('Running on: $_platformVersion\n',style: TextStyle(fontSize: 30.0),),
+              ),
+              InkWell(
+                onTap: getDeviceMsg,
+                child: Text('连接',style: TextStyle(fontSize: 30.0),),
+              ),
               new Expanded(
                 child: new ListView.builder(
                     itemCount: listScan == null ? 0 : listScan.length,

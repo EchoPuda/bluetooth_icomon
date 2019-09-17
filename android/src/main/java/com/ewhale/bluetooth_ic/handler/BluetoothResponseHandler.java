@@ -24,15 +24,28 @@ public class BluetoothResponseHandler {
     }
 
     public static void onInitFinish(Boolean b){
-        channel.invokeMethod("onInitFinish", b);
+        if (b) {
+            channel.invokeMethod("onInitFinish", "1");
+        } else {
+            channel.invokeMethod("onInitFinish", "0");
+        }
+
     }
 
     public static void sendBleState(Boolean isOpen){
-        channel.invokeMethod("onBleState", isOpen);
+        if (isOpen) {
+            channel.invokeMethod("onBleState", "1");
+        } else {
+            channel.invokeMethod("onBleState", "0");
+        }
     }
 
     public static void sendDeviceState(Boolean state){
-        channel.invokeMethod("onDeviceState", state);
+        if (state) {
+            channel.invokeMethod("onDeviceState", "1");
+        } else {
+            channel.invokeMethod("onDeviceState", "0");
+        }
     }
 
     public static void sendRulerMsg(HashMap<String, Object> map){

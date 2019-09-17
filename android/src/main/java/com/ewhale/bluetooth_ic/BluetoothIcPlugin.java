@@ -39,6 +39,10 @@ public class BluetoothIcPlugin implements MethodCallHandler {
 
     if (call.method.equals("getPlatformVersion")) {
         BluetoothHandler.sendExampleMsg(call,result);
+    } else if (call.method.equals("getScanMsg")) {
+        BluetoothHandler.startScanDevice(call,result);
+    } else if (call.method.equals("stopScanMsg")) {
+        BluetoothHandler.stopScanDevice(call,result);
     } else if (call.method.equals("getBlueTooth")) {
         BluetoothHandler.initBlueDevice(call,result);
     } else if (call.method.equals("updateUserInfo")) {

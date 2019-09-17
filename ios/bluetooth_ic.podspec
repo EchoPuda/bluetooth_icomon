@@ -15,7 +15,9 @@ bluetooth plugin
   s.source_files = 'Classes/**/*'
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-
+  s.preserve_paths = 'ICDeviceManager.framework'
+  s.xcconfig = { 'OTHER_LDFLAGS' => '-framework ICDeviceManager' }
+  s.vendored_frameworks = 'ICDeviceManager.framework'
   s.ios.deployment_target = '8.0'
 end
 

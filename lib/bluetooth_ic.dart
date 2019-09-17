@@ -27,7 +27,7 @@ Future<String> get bluetoothMacAddr async {
 ///更新用户信息
 Future updateUserInfo(
     {int age : 0,
-      int weight : 0,
+      double weight : 0,
       int height : 0,
       int sex : 0}) async {
     String result = await _channel.invokeMethod("updateUserInfo", {
@@ -36,6 +36,18 @@ Future updateUserInfo(
       "height": height,
       "sex": sex
   });
+  return result;
+}
+
+///开始扫描
+Future getScanMsg() async {
+  String result = await _channel.invokeMethod("getScanMsg");
+  return result;
+}
+
+///停止扫描
+Future stopScanMsg() async {
+  String result = await _channel.invokeMethod("stopScanMsg");
   return result;
 }
 
@@ -69,19 +81,22 @@ StreamController<ScanResult> _scanResultController = new StreamController.broadc
 Stream<ScanResult> get responseFromScan => _scanResultController.stream;
 
 ///初始化完成回调
-StreamController<bool> _initFinishController = new StreamController.broadcast();
+///"0": false , "1": true
+StreamController<String> _initFinishController = new StreamController.broadcast();
 
-Stream<bool> get responseFromInitSdkFinish => _initFinishController.stream;
+Stream<String> get responseFromInitSdkFinish => _initFinishController.stream;
 
 ///蓝牙状态回调
-StreamController<bool> _isBlueOpenController = new StreamController.broadcast();
+///"0": false , "1": true
+StreamController<String> _isBlueOpenController = new StreamController.broadcast();
 
-Stream<bool> get responseFromBleState => _isBlueOpenController.stream;
+Stream<String> get responseFromBleState => _isBlueOpenController.stream;
 
 ///设备状态回调
-StreamController<bool> _deviceStateController = new StreamController.broadcast();
+///"0": false , "1": true
+StreamController<String> _deviceStateController = new StreamController.broadcast();
 
-Stream<bool> get responseFromDeviceState => _deviceStateController.stream;
+Stream<String> get responseFromDeviceState => _deviceStateController.stream;
 
 ///维度尺信息回调
 StreamController<RulerMsg> _rulerMsgController = new StreamController.broadcast();

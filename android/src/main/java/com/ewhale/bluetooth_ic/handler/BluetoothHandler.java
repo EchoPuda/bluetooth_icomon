@@ -64,9 +64,9 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
             userInfo.rulerUnit = ICRulerUnitInch;
             userInfo.age = call.argument("age");
             userInfo.weight = (double) call.argument("weight");
-            userInfo.height = call.argument("age");
+            userInfo.height = call.argument("height");
             userInfo.sex = (int) call.argument("sex") == 0
-                    ? ICConstant.ICSexType.ICSexTypeMale : ICConstant.ICSexType.ICSexTypeMale;
+                    ? ICConstant.ICSexType.ICSexTypeMale : ICConstant.ICSexType.ICSexTypeFemal;
             userInfo.userIndex = 1;
             userInfo.bfaType = ICBFATypeNoContainWater;
             userInfo.peopleType = ICPeopleTypeNormal;
@@ -80,13 +80,16 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
      * 获取相应设备回调
      */
     public static void getDeviceMsg(MethodCall call, final MethodChannel.Result result) {
-        device.setMacAddr(call.arguments.toString());
+        String mac = call.argument("macAddr");
+        device.setMacAddr(mac);
         ICDeviceManager.shared().addDevice(device, new ICConstant.ICAddDeviceCallBack() {
             @Override
             public void onCallBack(ICDevice icDevice, ICConstant.ICAddDeviceCallBackCode icAddDeviceCallBackCode) {
                 if ("ICAddDeviceCallBackCodeSuccess".equals(icAddDeviceCallBackCode + "")) {
+                    System.out.println("000");
                     result.success("success");
                 }
+                System.out.println(icAddDeviceCallBackCode);
             }
         });
     }
@@ -95,11 +98,13 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
      * 取消设备连接，不用设备了或者切换设备就要调用
      */
     public static void removeDevice(MethodCall call, final MethodChannel.Result result) {
+        String mac = call.argument("macAddr");
+        device.setMacAddr(mac);
         if (device != null) {
-            if (device.getMacAddr().equals(call.arguments.toString())){
+            if (device.getMacAddr().equals(mac)){
                 ICDeviceManager.shared().removeDevice(device,null);
             } else {
-                device.setMacAddr(call.arguments.toString());
+                device.setMacAddr(mac);
                 ICDeviceManager.shared().removeDevice(device,null);
             }
         }
@@ -116,8 +121,22 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
         } else {
             initSDK();
         }
+        initSDK();
         ICDeviceManager.shared().setDelegate(new BluetoothHandler());
+    }
+
+    /**
+     * 初始化
+     */
+    public static void startScanDevice(MethodCall call, MethodChannel.Result result) {
         ICDeviceManager.shared().scanDevice(new BluetoothHandler());
+    }
+
+    /**
+     * 初始化
+     */
+    public static void stopScanDevice(MethodCall call, MethodChannel.Result result) {
+        ICDeviceManager.shared().stopScan();
     }
 
     /**
@@ -143,29 +162,30 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
      */
     @Override
     public void onScanResult(ICScanDeviceInfo icScanDeviceInfo) {
-        boolean isEnd = false;
-        for (ICScanDeviceInfo deviceInfo1 : listDevices) {
-            if (deviceInfo1.getMacAddr().equalsIgnoreCase(icScanDeviceInfo.getMacAddr())) {
-                deviceInfo1.setRssi(icScanDeviceInfo.getRssi());
-                isEnd = true;
-                break;
-            }
-        }
+//        boolean isEnd = false;
+//        for (ICScanDeviceInfo deviceInfo1 : listDevices) {
+//            if (deviceInfo1.getMacAddr().equalsIgnoreCase(icScanDeviceInfo.getMacAddr())) {
+//                deviceInfo1.setRssi(icScanDeviceInfo.getRssi());
+//                isEnd = true;
+//                break;
+//            }
+//        }
         HashMap<String, Object> map = new HashMap<>();
         map.put("name", icScanDeviceInfo.getName());
         map.put("macAddr",icScanDeviceInfo.getMacAddr());
         if (icScanDeviceInfo.getType() == ICDeviceTypeRuler) {
-            map.put("type","维度尺");
+            map.put("type","围度尺");
         } else if (icScanDeviceInfo.getType() == ICDeviceTypeFatScale
                 || icScanDeviceInfo.getType() == ICDeviceTypeFatScaleWithTemperature) {
             map.put("type","体脂秤");
         } else if (icScanDeviceInfo.getType() == ICDeviceTypeBalance) {
             map.put("type","紧致宝");
         }
-        if (!isEnd) {
-            listDevices.add(icScanDeviceInfo);
-            BluetoothResponseHandler.sendScanResult(map);
-        }
+//        if (!isEnd) {
+//
+//        }
+        listDevices.add(icScanDeviceInfo);
+        BluetoothResponseHandler.sendScanResult(map);
 
     }
 
