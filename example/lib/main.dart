@@ -38,7 +38,12 @@ class _MyAppState extends State<MyApp> {
         print(code);
       });
     });
-
+    bluetooth.responseFromRulerMsg.listen((data){
+      print(data.distance.toString()+'flutter');
+      setState(() {
+        listScan.add(Text(data.distance.toString()));
+      });
+    });
   }
   ///开始扫描
   void onScanMsg() async {
@@ -51,10 +56,10 @@ class _MyAppState extends State<MyApp> {
    print(result);
     print(code+'已连接');
 
-     bluetooth.responseFromFatScaleMsg.listen((data){
-       print(data.weight_kg);
-     });
+
   }
+
+
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;

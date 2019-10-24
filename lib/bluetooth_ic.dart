@@ -20,7 +20,7 @@ Future<String> get platformVersion async {
 }
 
 Future<String> get bluetoothMacAddr async {
-  final String result = await _channel.invokeMethod("getBlueTooth");
+  String result = await _channel.invokeMethod("getBlueTooth");
   return result;
 }
 

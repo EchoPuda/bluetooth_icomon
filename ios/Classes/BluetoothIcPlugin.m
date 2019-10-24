@@ -24,23 +24,20 @@
     
     instance.util = [[BluetoothPluginUtil alloc]init];
     instance.util.channel = channel;
-    [ICDeviceManager shared].delegate = instance;
-    [[ICDeviceManager shared] initMgr];
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([@"getPlatformVersion" isEqualToString:call.method]) {
     result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
-  } else if ([@"getPlatformVersion" isEqualToString:call.method]) {
-      [self updateUserInfo:call];
-  }  else if ([@"getScanMsg" isEqualToString:call.method]) {
+      [_util testConect:@"yes"];
+  } else if ([@"getScanMsg" isEqualToString:call.method]) {
       [self scanDevice];
   }  else if ([@"getBlueTooth" isEqualToString:call.method]) {
-      [self updateUserInfo:call];
+      [self initBlueDevice:call result:result];
   }  else if ([@"stopScanMsg" isEqualToString:call.method]) {
-      [self updateUserInfo:call];
-  }  else if ([@"getBlueTooth" isEqualToString:call.method]) {
-      [self updateUserInfo:call];
+      [self stopScanDevice];
+  }  else if ([@"updateUserInfo" isEqualToString:call.method]) {
+      [self updateUserInfo:call result:result];
   }  else if ([@"getDeviceMsg" isEqualToString:call.method]) {
             //获取设备连接
       [self getDeviceMsg:call result:result];
@@ -51,12 +48,15 @@
   }else {
     result(FlutterMethodNotImplemented);
   }
-    
-    
+}
+- (void)initBlueDevice:(FlutterMethodCall*)call result:(FlutterResult)result {
+    [ICDeviceManager shared].delegate = self;
+    [[ICDeviceManager shared] initMgr];
+    result(@"初始化成功");
 }
 
 - (void) getDeviceMsg:(FlutterMethodCall*)call result:(FlutterResult)result {
-    self.device.macAddr = call.arguments;
+    self.device.macAddr = call.arguments[@"macAddr"];
     [[ICDeviceManager shared] addDevice:_device callback:^(ICDevice *device, ICAddDeviceCallBackCode code) {
         if (code == ICAddDeviceCallBackCodeSuccess) {
             result(@"success");
@@ -68,10 +68,10 @@
 
 - (void)removeDevice:(FlutterMethodCall*)call result:(FlutterResult)result {
     if (_device != nil) {
-        if ([_device.macAddr isEqualToString:call.arguments]) {
+        if ([_device.macAddr isEqualToString:call.arguments[@"macAddr"]]) {
             [[ICDeviceManager shared] removeDevice:_device callback:nil];
         } else {
-            self.device.macAddr = call.arguments;
+            self.device.macAddr = call.arguments[@"macAddr"];
             [[ICDeviceManager shared] removeDevice:_device callback:nil];
         }
     }
@@ -79,6 +79,14 @@
 
 - (void)initBluetooth{
    
+}
+
+- (void)finalize{
+    [super finalize];
+    if (self.items.count > 0) {
+        [self.items removeAllObjects];
+    }
+    [[ICDeviceManager shared]stopScan];
 }
 
 - (void)onBleState:(ICBleState)state{
@@ -127,7 +135,7 @@
     }
 }
 
-- (void)updateUserInfo:(FlutterMethodCall*)call{
+- (void)updateUserInfo:(FlutterMethodCall*)call result:(FlutterResult)result{
     
     ICUserInfo * info = [[ICUserInfo alloc]init];
     if (call != nil) {
@@ -139,7 +147,7 @@
         info.userIndex = 1;
         info.bfaType = ICBFATypeNoContainWater;
         [[ICDeviceManager shared] updateUserInfo:info];
-        
+        result(@"success");
     }
 }
 
@@ -171,7 +179,9 @@
     info[@"time"] = @(data.time);
     info[@"visceralFat"] = @(data.visceralFat);
     info[@"weight_kg"] = @(data.weight_kg);
-    [_util sendFatScaleMsg:info];
+    if (data.isStabilized) {
+        [_util sendFatScaleMsg:info];
+    }
 }
 
 
@@ -295,12 +305,21 @@
     
 }
 
-
-
-
-
+/**
+ 开始扫描
+ */
 - (void)scanDevice{
     [[ICDeviceManager shared] scanDevice:self];
+}
+
+/**
+ 停止扫描
+ */
+- (void)stopScanDevice{
+    [[ICDeviceManager shared]stopScan];
+    if (self.items.count > 0) {
+        [self.items removeAllObjects];
+    }
 }
 
 - (NSMutableArray *)items{

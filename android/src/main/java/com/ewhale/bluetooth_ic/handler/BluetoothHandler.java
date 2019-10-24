@@ -1,7 +1,10 @@
 package com.ewhale.bluetooth_ic.handler;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -115,28 +118,43 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
      */
     public static void initBlueDevice(MethodCall call, MethodChannel.Result result) {
         Activity activity = registrar.activity();
+
         //检查是否开启了蓝牙权限
-        if (!ICDeviceManager.checkBlePermission(activity.getBaseContext())) {
+        if (!ICDeviceManager.checkBlePermission(registrar.context())) {
             ICDeviceManager.requestBlePermission(activity);
+
         } else {
             initSDK();
+            result.success("初始化成功");
         }
-        initSDK();
+//        initSDK();
+
         ICDeviceManager.shared().setDelegate(new BluetoothHandler());
+
+    }
+
+    public static void requestBlePermission() {
+
+    }
+    public static PluginRegistry.Registrar getRegistrar() {
+        return registrar;
     }
 
     /**
-     * 初始化
+     * 开始扫描
      */
     public static void startScanDevice(MethodCall call, MethodChannel.Result result) {
         ICDeviceManager.shared().scanDevice(new BluetoothHandler());
     }
 
     /**
-     * 初始化
+     * 停止扫描
      */
     public static void stopScanDevice(MethodCall call, MethodChannel.Result result) {
         ICDeviceManager.shared().stopScan();
+        if (listDevices != null) {
+            listDevices.clear();
+        }
     }
 
     /**
@@ -153,6 +171,9 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
+        if (listDevices != null) {
+            listDevices.clear();
+        }
         ICDeviceManager.shared().stopScan();
     }
 
@@ -162,14 +183,14 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
      */
     @Override
     public void onScanResult(ICScanDeviceInfo icScanDeviceInfo) {
-//        boolean isEnd = false;
-//        for (ICScanDeviceInfo deviceInfo1 : listDevices) {
-//            if (deviceInfo1.getMacAddr().equalsIgnoreCase(icScanDeviceInfo.getMacAddr())) {
-//                deviceInfo1.setRssi(icScanDeviceInfo.getRssi());
-//                isEnd = true;
-//                break;
-//            }
-//        }
+        boolean isEnd = false;
+        for (ICScanDeviceInfo deviceInfo1 : listDevices) {
+            if (deviceInfo1.getMacAddr().equalsIgnoreCase(icScanDeviceInfo.getMacAddr())) {
+                deviceInfo1.setRssi(icScanDeviceInfo.getRssi());
+                isEnd = true;
+                break;
+            }
+        }
         HashMap<String, Object> map = new HashMap<>();
         map.put("name", icScanDeviceInfo.getName());
         map.put("macAddr",icScanDeviceInfo.getMacAddr());
@@ -181,11 +202,11 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
         } else if (icScanDeviceInfo.getType() == ICDeviceTypeBalance) {
             map.put("type","紧致宝");
         }
-//        if (!isEnd) {
-//
-//        }
-        listDevices.add(icScanDeviceInfo);
-        BluetoothResponseHandler.sendScanResult(map);
+        if (!isEnd) {
+            listDevices.add(icScanDeviceInfo);
+            BluetoothResponseHandler.sendScanResult(map);
+        }
+
 
     }
 
@@ -249,7 +270,9 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
         map.put("time",String.valueOf(icWeightData.time));
         map.put("visceralFat",icWeightData.visceralFat);
         map.put("weight_kg",icWeightData.weight_kg);
-        BluetoothResponseHandler.sendFatScaleMsg(map);
+        if (icWeightData.isStabilized) {
+            BluetoothResponseHandler.sendFatScaleMsg(map);
+        }
     }
 
     @Override
@@ -273,7 +296,9 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
     @Override
     public void onReceiveRulerData(ICDevice icDevice, ICRulerData icRulerData) {
         HashMap<String, Object> map = new HashMap<>();
+//        System.out.println(icRulerData.distance_cm);
         if (icRulerData.isStabilized) {
+            System.out.println(icRulerData.distance_cm);
             map.put("distance",icRulerData.distance_cm);
             map.put("time",String.valueOf(icRulerData.time));
             BluetoothResponseHandler.sendRulerMsg(map);

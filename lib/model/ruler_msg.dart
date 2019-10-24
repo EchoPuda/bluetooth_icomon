@@ -4,6 +4,6 @@ class RulerMsg {
   final String time;
 
   RulerMsg.fromMap(Map map)
-      : distance = map["name"],
-        time = map["macAddr"];
+      : distance = map["distance"],
+        time = map["time"];
 }
