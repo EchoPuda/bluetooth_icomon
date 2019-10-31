@@ -49,8 +49,11 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
 
     private static ICDevice device = new ICDevice();
 
+    private static BluetoothHandler bluetoothHandler;
+
     public static void setRegistrar(PluginRegistry.Registrar registrar) {
         BluetoothHandler.registrar = registrar;
+        bluetoothHandler = new BluetoothHandler();
     }
 
     public static void sendExampleMsg(MethodCall call, MethodChannel.Result result) {
@@ -129,7 +132,7 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
         }
 //        initSDK();
 
-        ICDeviceManager.shared().setDelegate(new BluetoothHandler());
+
 
     }
 
@@ -166,6 +169,140 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
         config.context = context.getApplicationContext();
         //初始化
         ICDeviceManager.shared().initMgrWithConfig(config);
+        ICDeviceManager.shared().setDelegate(new ICDeviceManagerDelegate() {
+            /**
+             * 初始化结果
+             * @param b true false
+             */
+            @Override
+            public void onInitFinish(boolean b) {
+                BluetoothResponseHandler.onInitFinish(b);
+            }
+
+            /**
+             * 蓝牙状态
+             * @param icBleState true false
+             */
+            @Override
+            public void onBleState(ICConstant.ICBleState icBleState) {
+                System.out.println("11111111111111111111111111111111111111111");
+                if (icBleState == ICBleStatePoweredOn) {
+                    BluetoothResponseHandler.sendBleState(true);
+                } else {
+                    BluetoothResponseHandler.sendBleState(false);
+                }
+            }
+
+            /**
+             * 设备连接状态
+             * @param icDevice
+             * @param icDeviceConnectState
+             */
+            @Override
+            public void onDeviceConnectionChanged(ICDevice icDevice, ICConstant.ICDeviceConnectState icDeviceConnectState) {
+                System.out.println("0000000000000000000000000000000000000000");
+                if (icDeviceConnectState == ICDeviceConnectStateConnected) {
+                    System.out.println("11111111111111111111111111111111111111111111");
+                    BluetoothResponseHandler.sendDeviceState(true);
+                } else if (icDeviceConnectState == ICDeviceConnectStateDisconnected) {
+                    System.out.println("22222222222222222222222222222222222222222222");
+                    BluetoothResponseHandler.sendDeviceState(false);
+                } else{
+
+                    System.out.println("333333333333333333333333333333333333333333");
+                }
+            }
+
+            /**
+             * 体脂秤数据回调
+             */
+            @Override
+            public void onReceiveWeightData(ICDevice icDevice, ICWeightData icWeightData) {
+                HashMap<String, Object> map = new HashMap<>();
+                map.put("bmi",icWeightData.bmi);
+                map.put("bmr",icWeightData.bmr);
+                map.put("bodyFatPercent",icWeightData.bodyFatPercent);
+                map.put("boneMass",icWeightData.boneMass);
+                map.put("electrode",icWeightData.electrode);
+                map.put("hr",icWeightData.hr);
+                map.put("imp",icWeightData.imp);
+                map.put("isStabilized",icWeightData.isStabilized);
+                map.put("moisturePercent",icWeightData.moisturePercent);
+                map.put("musclePercent",icWeightData.musclePercent);
+                map.put("physicalAge",icWeightData.physicalAge);
+                map.put("proteinPercent",icWeightData.proteinPercent);
+                map.put("smPercent",icWeightData.smPercent);
+                map.put("subcutaneousFatPercent",icWeightData.subcutaneousFatPercent);
+                map.put("temperature",icWeightData.temperature);
+                map.put("time",String.valueOf(icWeightData.time));
+                map.put("visceralFat",icWeightData.visceralFat);
+                map.put("weight_kg",icWeightData.weight_kg);
+                if (icWeightData.isStabilized) {
+                    BluetoothResponseHandler.sendFatScaleMsg(map);
+                }
+            }
+
+            @Override
+            public void onReceiveKitchenScaleData(ICDevice icDevice, ICKitchenScaleData icKitchenScaleData) {
+
+            }
+
+            @Override
+            public void onReceiveKitchenScaleUnitChanged(ICDevice icDevice, ICConstant.ICKitchenScaleUnit icKitchenScaleUnit) {
+
+            }
+
+            @Override
+            public void onReceiveCoordData(ICDevice icDevice, ICCoordData icCoordData) {
+
+            }
+
+            /**
+             * 维度尺数据回调
+             */
+            @Override
+            public void onReceiveRulerData(ICDevice icDevice, ICRulerData icRulerData) {
+                HashMap<String, Object> map = new HashMap<>();
+//        System.out.println(icRulerData.distance_cm);
+                if (icRulerData.isStabilized) {
+                    System.out.println(icRulerData.distance_cm);
+                    map.put("distance",icRulerData.distance_cm);
+                    map.put("time",String.valueOf(icRulerData.time));
+                    BluetoothResponseHandler.sendRulerMsg(map);
+                }
+
+            }
+
+            @Override
+            public void onReceiveWeightCenterData(ICDevice icDevice, ICWeightCenterData icWeightCenterData) {
+
+            }
+
+            @Override
+            public void onReceiveWeightUnitChanged(ICDevice icDevice, ICConstant.ICWeightUnit icWeightUnit) {
+
+            }
+
+            @Override
+            public void onReceiveRulerUnitChanged(ICDevice icDevice, ICConstant.ICRulerUnit icRulerUnit) {
+
+            }
+
+            @Override
+            public void onReceiveRulerMeasureModeChanged(ICDevice icDevice, ICConstant.ICRulerMeasureMode icRulerMeasureMode) {
+
+            }
+
+            @Override
+            public void onReceiveMeasureStepData(ICDevice icDevice, ICConstant.ICMeasureStep icMeasureStep, Object o) {
+
+            }
+
+            @Override
+            public void onReceiveWeightHistoryData(ICDevice icDevice, ICWeightHistoryData icWeightHistoryData) {
+
+            }
+        });
     }
 
     @Override
@@ -240,9 +377,14 @@ public class BluetoothHandler implements ICDeviceManagerDelegate, ICScanDeviceDe
     @Override
     public void onDeviceConnectionChanged(ICDevice icDevice, ICConstant.ICDeviceConnectState icDeviceConnectState) {
         if (icDeviceConnectState == ICDeviceConnectStateConnected) {
+            System.out.println("11111111111111111111111111111111111111111111");
             BluetoothResponseHandler.sendDeviceState(true);
         } else if (icDeviceConnectState == ICDeviceConnectStateDisconnected) {
+            System.out.println("22222222222222222222222222222222222222222222");
             BluetoothResponseHandler.sendDeviceState(false);
+        } else{
+
+            System.out.println("333333333333333333333333333333333333333333");
         }
     }
 
